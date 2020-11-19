@@ -43,7 +43,7 @@ public class DataUtility {
             if(value instanceof HashMap) {		
                 try {
                     String json =  new ObjectMapper().writeValueAsString(value); 
-                    return parseValue(json);
+                    return parseValue(null, json);
                 } catch (JsonProcessingException e) {
                     System.out.println("JSON couldn't be processed" + e.getLocalizedMessage());
                 }
