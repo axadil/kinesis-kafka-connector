@@ -1,6 +1,7 @@
 package com.amazon.kinesis.kafka;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -23,10 +24,35 @@ public class DataUtility {
             if (value == null) {
                 return null;
             }
-            if (value instanceof Number) {
-                ByteBuffer longBuf = ByteBuffer.allocate(8);
-                longBuf.putLong((Long) value);
-                return longBuf;
+        if (value instanceof Double) {
+            ByteBuffer buf = ByteBuffer.allocate(8);
+            buf.putDouble((Double) value);
+            return buf;
+        }
+        if (value instanceof Float) {
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.putFloat((Float) value);
+            return buf;
+        }
+        if (value instanceof Short) {
+            ByteBuffer buf = ByteBuffer.allocate(2);
+            buf.putShort((Short) value);
+            return buf;
+        }
+        if (value instanceof Integer) {
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.putInt((Integer) value);
+            return buf;
+        }
+        if (value instanceof Byte) {
+            ByteBuffer buf = ByteBuffer.allocate(1);
+            buf.put((Byte) value);
+            return buf;
+        }
+            if (value instanceof Long) {
+                ByteBuffer buf = ByteBuffer.allocate(8);
+                buf.putLong((Long) value);
+                return buf;
             }
             if (value instanceof Boolean) {
                 ByteBuffer boolBuffer = ByteBuffer.allocate(1);
@@ -43,7 +69,7 @@ public class DataUtility {
             if(value instanceof HashMap) {		
                 try {
                     String json =  new ObjectMapper().writeValueAsString(value); 
-                    return parseValue(json);
+                    return parseValue(null, json);
                 } catch (JsonProcessingException e) {
                     System.out.println("JSON couldn't be processed" + e.getLocalizedMessage());
                 }
@@ -54,6 +80,21 @@ public class DataUtility {
                 else if (value instanceof ByteBuffer)
                     return (ByteBuffer) value;
             }
+
+        if (value.getClass().isArray()){
+
+            Object[] objs = (Object[]) value;
+            ByteBuffer[] byteBuffers = new ByteBuffer[objs.length];
+            int noOfByteBuffer = 0;
+
+            for (Object obj : objs) {
+                byteBuffers[noOfByteBuffer++] = parseValue(null, obj);
+            }
+
+            ByteBuffer result = ByteBuffer.allocate(Arrays.stream(byteBuffers).mapToInt(Buffer::remaining).sum());
+            Arrays.stream(byteBuffers).forEach(bb -> result.put(bb.duplicate()));
+            return result;
+        }
             System.out.println("Unsupported value type: " + value.getClass());
             return null;
         }
